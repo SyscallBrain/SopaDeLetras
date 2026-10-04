@@ -15,10 +15,31 @@ android {
         applicationId = "app.sopadeletras"
         minSdk = 26
         targetSdk = 36
-        versionCode = 19
-        versionName = "1.0"
+        versionCode = 20
+        versionName = "1.0.1"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    // Release signing: credentials come from env vars (CI) or Gradle properties
+    // (~/.gradle/gradle.properties). Without them, release falls back to the debug key.
+    val releaseStoreFile = providers.environmentVariable("SIGNING_KEYSTORE_FILE")
+        .orElse(providers.gradleProperty("sopa.keystoreFile")).orNull
+    val releaseStorePassword = providers.environmentVariable("SIGNING_PASSWORD")
+        .orElse(providers.gradleProperty("sopa.keystorePassword")).orNull
+    val releaseKeyAlias = providers.environmentVariable("SIGNING_KEY_ALIAS")
+        .orElse(providers.gradleProperty("sopa.keyAlias")).orNull
+    val hasReleaseSigning = releaseStoreFile != null && releaseStorePassword != null && releaseKeyAlias != null
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseStorePassword
+            }
         }
     }
 
@@ -29,7 +50,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (hasReleaseSigning) "release" else "debug")
         }
     }
     compileOptions {
