@@ -15,8 +15,8 @@ android {
         applicationId = "app.sopadeletras"
         minSdk = 26
         targetSdk = 36
-        versionCode = 20
-        versionName = "1.0.1"
+        versionCode = 21
+        versionName = "1.0.2"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -56,6 +56,11 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    // F-Droid rejects the Google-signed dependency metadata block
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
     buildFeatures {
         compose = true

@@ -1,0 +1,2 @@
+First release available on F-Droid.
+Release signed with a dedicated key; dependency info block removed.
