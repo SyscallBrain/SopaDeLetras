@@ -1,7 +1,7 @@
 # Draft metadata for https://gitlab.com/fdroid/fdroiddata
 # Copy to metadata/app.sopadeletras.yml in a fork of fdroiddata and open a merge request.
 Categories:
-  - Games
+  - Word Game
 License: MIT
 AuthorName: Tiago
 WebSite: https://github.com/SyscallBrain/SopaDeLetras
@@ -17,7 +17,7 @@ Repo: https://github.com/SyscallBrain/SopaDeLetras.git
 Builds:
   - versionName: 1.0.2
     versionCode: 21
-    commit: v1.0.2
+    commit: 1af2651be2259651c68b787435312cb4cdf0fc90
     subdir: app
     gradle:
       - yes
