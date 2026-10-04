@@ -1,0 +1,14 @@
+*.apk
+*.iml
+*.keystore
+*.log
+.DS_Store
+.gradle/
+.idea/
+build.log
+build/
+local.properties
+
+# Notas internas (não publicar)
+PLANO.md
+DECISOES.md
