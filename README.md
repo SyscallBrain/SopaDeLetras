@@ -5,6 +5,7 @@
 **Sopa de letras para Android, feita em Kotlin e Jetpack Compose.**
 Campanha de 300 níveis, desafio diário, contra-relógio e palavra misteriosa — em português e inglês, sem anúncios e sem internet.
 
+[![CI](https://github.com/SyscallBrain/SopaDeLetras/actions/workflows/ci.yml/badge.svg)](https://github.com/SyscallBrain/SopaDeLetras/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?logo=kotlin&logoColor=white)
@@ -43,6 +44,10 @@ Campanha de 300 níveis, desafio diário, contra-relógio e palavra misteriosa �
     <td align="center"><img src="docs/screenshots/definicoes.jpg" width="200"><br><sub>Definições</sub></td>
   </tr>
 </table>
+
+## Instalar
+
+Descarrega o APK mais recente em [Releases](https://github.com/SyscallBrain/SopaDeLetras/releases/latest) e abre-o no telemóvel (é preciso permitir a instalação de fontes desconhecidas). Requer Android 8.0 ou superior.
 
 ## Compilar
 
