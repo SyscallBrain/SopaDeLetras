@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sopa de Letras</string>
+    <string name="m1_test_title">Sopa de Letras</string>
+    <string name="m1_test_subtitle">Encontra palavras entre as estrelas.</string>
+</resources>

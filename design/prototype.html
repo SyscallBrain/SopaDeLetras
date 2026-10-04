@@ -1,0 +1,991 @@
+<title>Sopa de Letras Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone prototype sticky on the left, design rationale scrolling on the right; stacks on narrow screens */
+:root {
+  --page-bg: #0A0D18;
+  --page-fg: #E6E8F2;
+  --page-mute: #8A91B0;
+  --page-line: #1E2540;
+  --page-card: #111627;
+  --display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --body: "Figtree", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--page-bg); color: var(--page-fg); font: 400 16px/1.55 var(--body); padding-inline: 20px; padding-block: 32px 64px; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; line-height: 1.05; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; }
+button { font-family: inherit; }
+.lead { color: var(--page-mute); max-width: 56ch; margin-top: 14px; font-size: 1.05rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--page-mute); font-weight: 600; }
+
+.main { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 48px; margin-top: 40px; align-items: start; }
+.stage { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 12px; align-items: center; min-width: 0; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } .stage { position: static; } }
+
+/* jump nav */
+.jump { display: flex; gap: 6px; overflow-x: auto; width: 100%; padding-bottom: 6px; scrollbar-width: thin; }
+.jump button { flex: none; appearance: none; border: 1px solid var(--page-line); background: var(--page-card); color: var(--page-fg); font: 600 .78rem var(--body); padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+.jump button:focus-visible, .phone button:focus-visible, .phone [tabindex]:focus-visible, .phone input:focus-visible { outline: 2px solid var(--accent, #fff); outline-offset: 2px; }
+.jump button[aria-current="true"] { background: var(--page-fg); color: var(--page-bg); border-color: var(--page-fg); }
+
+/* phone */
+.phone { width: 100%; max-width: 330px; aspect-ratio: 9 / 18.6; border-radius: 38px; border: 8px solid #05070E; background: var(--bg); color: var(--text); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 14px 16px 16px; gap: 10px; box-shadow: 0 30px 60px -20px #000; transition: background .35s; --warn: var(--f4); }
+.phone[data-pal="a"] { --bg:#0F1424; --surf:#171E35; --cell:#1B2440; --text:#E8EAF4; --mute:#8B93B5; --accent:#F4B860; --on:#1A1304; --f0:#F4B860; --f1:#7CC6FE; --f2:#C3A6FF; --f3:#8EE3C2; --f4:#FF8FA3; }
+.phone[data-pal="t"] { --bg:#1A1B26; --surf:#24283B; --cell:#292E42; --text:#C0CAF5; --mute:#7982B4; --accent:#7AA2F7; --on:#16161E; --f0:#7AA2F7; --f1:#BB9AF7; --f2:#9ECE6A; --f3:#FF9E64; --f4:#F7768E; }
+.phone button { font-family: var(--body); }
+.status { display: flex; justify-content: space-between; font-size: .7rem; color: var(--mute); font-variant-numeric: tabular-nums; flex: none; }
+.screen { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; scrollbar-width: none; }
+.screen::-webkit-scrollbar { display: none; }
+.ic { width: 1.25em; height: 1.25em; flex: none; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex: none; }
+.topbar .ttl { font: 700 1.05rem var(--display); }
+.topbar .sub { font-size: .72rem; color: var(--mute); font-variant-numeric: tabular-nums; }
+.topbar .sub b { color: var(--accent); font-weight: 600; }
+.chip { background: var(--surf); border-radius: 999px; padding: 6px 12px; font: 600 .8rem var(--body); font-variant-numeric: tabular-nums; display: flex; gap: 6px; align-items: center; flex: none; }
+.chip b { color: var(--accent); font-weight: 700; }
+.chip.warn b { color: var(--warn); animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: .45; } }
+.prog { height: 6px; border-radius: 99px; background: var(--surf); overflow: hidden; flex: none; }
+.prog > div { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .4s; }
+.board { background: var(--surf); border-radius: 24px; padding: 10px; touch-action: none; user-select: none; -webkit-user-select: none; container-type: inline-size; flex: none; }
+.grid { display: grid; gap: 3px; }
+.c { aspect-ratio: 1; border-radius: 10px; background: var(--cell); display: grid; place-items: center; font: 700 calc(46cqw / var(--n) * var(--ls, 1)) var(--display); color: var(--text); transition: background .15s, color .15s, transform .15s; position: relative; }
+.grid[data-n="10"] { gap: 2px; } .grid[data-n="12"] { gap: 2px; }
+.grid[data-n="10"] .c { border-radius: 8px; } .grid[data-n="12"] .c { border-radius: 7px; }
+.c.sel { background: var(--accent); color: var(--on); transform: scale(.92); }
+.c.fnd { color: var(--on); }
+.c.left { box-shadow: inset 0 0 0 2px var(--accent); color: var(--accent); }
+.c.pop { animation: pop .35s ease; }
+@keyframes pop { 50% { transform: scale(1.12); } }
+.cb .c[class*=" s"]::after { position: absolute; top: 1px; right: 3px; font-size: calc(16cqw / var(--n)); opacity: .55; line-height: 1; }
+.cb .c.s0::after, .cb .w.s0::before { content: "●"; } .cb .c.s1::after, .cb .w.s1::before { content: "○"; } .cb .c.s2::after, .cb .w.s2::before { content: "▬"; } .cb .c.s3::after, .cb .w.s3::before { content: "◆"; } .cb .c.s4::after, .cb .w.s4::before { content: "✕"; }
+.cb .w[class*=" s"]::before { margin-right: 4px; font-size: .8em; }
+.words { display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; flex: none; }
+.w { font: 600 .68rem var(--body); letter-spacing: .08em; padding: 4px 9px; border-radius: 999px; background: var(--surf); color: var(--text); }
+.w.done { color: var(--on); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.w.hid { color: var(--mute); letter-spacing: .2em; }
+.hint { margin-top: auto; display: flex; justify-content: space-between; gap: 8px; flex: none; }
+.btn { flex: 1; text-align: center; font: 600 .8rem var(--body); padding: 11px 0; border-radius: 16px; background: var(--surf); color: var(--text); border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.pri { background: var(--accent); color: var(--on); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn .cnt { font-size: .7rem; opacity: .7; }
+.clue { background: var(--surf); border-radius: 18px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; flex: none; }
+.clue .ct { font-size: .74rem; color: var(--mute); }
+.clue .ct b { color: var(--text); font-weight: 600; }
+.slots { display: flex; gap: 4px; flex-wrap: wrap; }
+.slot { width: 24px; height: 28px; border-radius: 8px; background: var(--cell); display: grid; place-items: center; font: 700 .9rem var(--display); color: var(--accent); }
+
+/* overlays */
+.ov { position: absolute; inset: 0; background: color-mix(in srgb, var(--bg) 90%, transparent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 28px; z-index: 5; animation: fade .25s ease; }
+@keyframes fade { from { opacity: 0; } }
+.ov h3 { font-size: 1.6rem; }
+.ov p { color: var(--mute); font-size: .9rem; }
+.ov .btn { flex: none; width: 100%; padding: 13px 0; }
+.ov .big { font: 800 3rem/1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.stars { font-size: 1.6rem; letter-spacing: .15em; color: var(--accent); }
+.stars i { font-style: normal; color: var(--cell); }
+.tag { font: 600 .7rem var(--body); letter-spacing: .1em; text-transform: uppercase; background: var(--accent); color: var(--on); padding: 3px 10px; border-radius: 99px; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surf); border-radius: 28px 28px 0 0; padding: 18px 18px 22px; display: flex; flex-direction: column; gap: 12px; z-index: 6; animation: up .25s ease; box-shadow: 0 -20px 40px -10px #0008; }
+@keyframes up { from { transform: translateY(40%); opacity: 0; } }
+.sheet h4 { margin: 0; font: 700 1.05rem var(--display); }
+.sheet input { width: 100%; background: var(--cell); border: 2px solid transparent; border-radius: 14px; padding: 12px 14px; color: var(--text); font: 700 1.1rem var(--display); letter-spacing: .25em; text-transform: uppercase; }
+.sheet input.err { border-color: var(--warn); animation: shake .35s; }
+.sheet .msg { font-size: .76rem; color: var(--mute); min-height: 1.2em; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.toast { position: absolute; top: 74px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--on); font: 700 .85rem var(--body); padding: 6px 14px; border-radius: 99px; z-index: 7; animation: fade .2s ease; pointer-events: none; }
+
+/* home & menus */
+.hero { display: flex; flex-direction: column; gap: 2px; padding-top: 6px; flex: none; }
+.hero h2 { font: 800 1.9rem/1.05 var(--display); }
+.hero p { color: var(--mute); font-size: .82rem; }
+.card { background: var(--surf); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: none; text-align: left; color: var(--text); border: 0; width: 100%; }
+button.card { cursor: pointer; }
+.card.daily { background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 24%, var(--surf)), var(--surf) 70%); }
+.card .k { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
+.card .t { font: 700 1rem var(--display); }
+.card .m { font-size: .76rem; color: var(--mute); }
+.card .pill { align-self: flex-start; background: var(--accent); color: var(--on); font: 700 .78rem var(--body); padding: 6px 14px; border-radius: 99px; }
+.card .pill.done { background: var(--cell); color: var(--text); }
+.flame { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 600; }
+.mini { height: 5px; border-radius: 9px; background: var(--cell); overflow: hidden; }
+.mini > div { height: 100%; background: var(--accent); }
+.rowitem { display: flex; align-items: center; gap: 12px; background: var(--surf); border-radius: 18px; padding: 10px 12px; border: 0; color: var(--text); text-align: left; cursor: pointer; width: 100%; flex: none; }
+.rowitem .ico { width: 38px; height: 38px; border-radius: 13px; background: var(--cell); display: grid; place-items: center; color: var(--accent); flex: none; }
+.rowitem .tx { flex: 1; min-width: 0; }
+.rowitem .t { font: 700 .92rem var(--display); display: block; }
+.rowitem .m { font-size: .72rem; color: var(--mute); display: block; }
+.rowitem .chev { color: var(--mute); }
+.foot { display: flex; gap: 8px; margin-top: auto; flex: none; }
+.screen > .hint { position: sticky; bottom: 0; background: var(--bg); padding-top: 6px; }
+.hero { gap: 0 !important; }
+.hdr { display: flex; align-items: center; gap: 8px; flex: none; }
+.hdr .back { width: 38px; height: 38px; border-radius: 13px; background: var(--surf); color: var(--text); border: 0; display: grid; place-items: center; cursor: pointer; }
+.hdr .ttl { font: 700 1.15rem var(--display); }
+.lbl { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); font-weight: 600; flex: none; }
+.seg { display: flex; gap: 4px; background: var(--surf); border-radius: 999px; padding: 4px; flex: none; }
+.seg button { flex: 1; appearance: none; border: 0; background: transparent; color: var(--mute); font: 600 .8rem var(--body); padding: 8px 0; border-radius: 999px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on); }
+.desc { font-size: .76rem; color: var(--mute); flex: none; }
+.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: none; }
+.cat { background: var(--surf); border: 2px solid transparent; border-radius: 18px; padding: 10px 12px; color: var(--text); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 2px; }
+.cat[aria-pressed="true"] { border-color: var(--accent); }
+.cat .dot { width: 18px; height: 18px; border-radius: 7px; margin-bottom: 4px; }
+.cat .t { font: 700 .88rem var(--display); }
+.cat .m { font-size: .68rem; color: var(--mute); }
+.set { background: var(--surf); border-radius: 18px; padding: 4px 14px; display: flex; flex-direction: column; flex: none; }
+.set .r { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--cell); font-size: .85rem; }
+.set .r:first-child { border-top: 0; }
+.set .r small { display: block; color: var(--mute); font-size: .7rem; }
+.sw { appearance: none; width: 44px; height: 26px; border-radius: 99px; background: var(--cell); border: 0; position: relative; cursor: pointer; flex: none; transition: background .2s; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--mute); transition: transform .2s, background .2s; }
+.sw[aria-checked="true"] { background: var(--accent); }
+.sw[aria-checked="true"]::after { transform: translateX(18px); background: var(--on); }
+.themes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 6px 0 12px; }
+.theme { border: 2px solid transparent; border-radius: 16px; background: var(--cell); padding: 8px; color: var(--text); font: 600 .75rem var(--body); text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; }
+.theme[aria-pressed="true"] { border-color: var(--accent); }
+.theme .pv { height: 42px; border-radius: 10px; padding: 6px; display: flex; flex-direction: column; gap: 4px; }
+.theme .pv i { display: block; height: 6px; border-radius: 4px; }
+.range { display: flex; align-items: center; gap: 10px; padding: 10px 0 14px; }
+.range input { flex: 1; accent-color: var(--accent); min-width: 0; }
+.range .pvl { width: 34px; height: 34px; border-radius: 10px; background: var(--cell); display: grid; place-items: center; font: 700 calc(.95rem * var(--ls, 1)) var(--display); }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex: none; }
+.stat { background: var(--surf); border-radius: 18px; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.stat b { font: 800 1.5rem/1.1 var(--display); color: var(--accent); font-variant-numeric: tabular-nums; }
+.stat span { font-size: .7rem; color: var(--mute); }
+.best { background: var(--surf); border-radius: 18px; padding: 6px 14px; flex: none; }
+.best .r { display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--cell); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.best .r:first-child { border-top: 0; }
+.best .r span:last-child { color: var(--accent); font-weight: 600; }
+.ghost { background: transparent; color: var(--mute); border: 1px solid var(--cell); }
+
+
+/* campaign */
+.worlds { display: flex; gap: 6px; overflow-x: auto; flex: none; scrollbar-width: none; padding-bottom: 2px; }
+.worlds::-webkit-scrollbar { display: none; }
+.wb { flex: none; width: 34px; height: 34px; border-radius: 12px; border: 0; background: var(--surf); color: var(--text); font: 700 .85rem var(--display); cursor: pointer; display: grid; place-items: center; }
+.wb[aria-pressed="true"] { background: var(--accent); color: var(--on); }
+.wb[data-lock] { color: var(--mute); }
+.wb .ic { width: 15px; height: 15px; }
+.nodes { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; flex: none; }
+.node { aspect-ratio: 1; border-radius: 13px; border: 0; background: var(--surf); color: var(--text); position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: var(--display); padding: 0; }
+.node .nn { font: 700 .95rem/1 var(--display); }
+.node .ns { font-size: .42rem; letter-spacing: 0; line-height: 1; height: .5rem; margin-top: 2px; }
+.node.done { color: var(--on); }
+.node.cur { background: var(--accent); color: var(--on); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.node.lock { background: var(--cell); color: var(--mute); opacity: .7; }
+.node .nb { position: absolute; top: 3px; right: 3px; width: 11px; height: 11px; }
+.set .seg { background: var(--cell); }
+.card .mini { display: block; }
+
+/* page content */
+.content { display: flex; flex-direction: column; gap: 44px; min-width: 0; }
+.sec { display: flex; flex-direction: column; gap: 16px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.pcard { background: var(--page-card); border: 1px solid var(--page-line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pcard p, .row p, .pal-info p { color: var(--page-mute); font-size: .95rem; }
+.pcard ul { margin: 0; padding-left: 1.1em; color: var(--page-mute); font-size: .92rem; display: flex; flex-direction: column; gap: 4px; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swp { display: flex; flex-direction: column; gap: 4px; font-size: .7rem; color: var(--page-mute); font-variant-numeric: tabular-nums; }
+.swp i { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #ffffff14; }
+.pal-info { display: flex; flex-direction: column; gap: 14px; background: var(--page-card); border: 1px solid var(--page-line); border-radius: 18px; padding: 20px; }
+.rows { display: flex; flex-direction: column; }
+.row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding-block: 14px; border-top: 1px solid var(--page-line); }
+.row h3 { font-size: .95rem; }
+@media (max-width: 520px) { .row { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: .92rem; }
+th, td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--page-line); }
+th { color: var(--page-mute); font-weight: 600; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
+.tscroll { overflow-x: auto; background: var(--page-card); border: 1px solid var(--page-line); border-radius: 18px; }
+.tscroll tr:first-child th, .tscroll tr:first-child td { border-top: 0; }
+.pick { background: var(--page-card); border: 1px dashed #3A4472; border-radius: 18px; padding: 20px; }
+.pick ul { margin: 10px 0 0; padding-left: 1.1em; color: var(--page-mute); display: flex; flex-direction: column; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .c, .prog > div, .phone, .sw::after { transition: none; } .c.pop, .chip.warn b, .ov, .sheet, .toast { animation: none; } }
+</style>
+<div class="wrap">
+  <p class="eyebrow">Direção visual · Android 16</p>
+  <h1>Sopa de Letras, em modo noite</h1>
+  <p class="lead">Protótipo completo com campanha de 300 níveis, quatro modos de jogo e dois idiomas de palavras. Usa os atalhos por cima do telemóvel para saltar entre ecrãs, ou navega como numa app a sério. Arrasta sobre as letras para jogar: a ajuda de direção (ligada por defeito) encaixa o arrasto na linha mais próxima, por isso não precisas de pontaria perfeita.</p>
+
+  <div class="main">
+    <div class="stage">
+      <div class="jump" id="jump" role="group" aria-label="Atalhos de ecrã">
+        <button data-j="home">Início</button>
+        <button data-j="camp">Campanha</button>
+        <button data-j="level">Nível</button>
+        <button data-j="timed">Cronometrado</button>
+        <button data-j="boss">Chefe</button>
+        <button data-j="setup">Jogo livre</button>
+        <button data-j="daily">Diário</button>
+        <button data-j="time">Contra-relógio</button>
+        <button data-j="mystery">Misteriosa</button>
+        <button data-j="pause">Pausa</button>
+        <button data-j="win">Vitória</button>
+        <button data-j="settings">Definições</button>
+        <button data-j="stats">Estatísticas</button>
+      </div>
+      <div class="phone" id="phone" data-pal="a">
+        <div class="status"><span id="clock">21:04</span><span>5G · 82%</span></div>
+        <div class="screen" id="screen"></div>
+        <div class="ov" id="ov" hidden></div>
+        <div class="sheet" id="sheet" hidden></div>
+        <div class="toast" id="toast" hidden></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <section class="sec">
+        <h2>Campanha de 300 níveis</h2>
+        <p style="color:var(--page-mute)">Dez mundos com trinta níveis cada, um tema por mundo. A dificuldade sobe sozinha: o tabuleiro cresce, há mais palavras, mais direções e letras enganadoras. São cerca de 10 horas só na campanha (a 2 minutos por nível), sem contar o jogo livre, o desafio diário e o contra-relógio.</p>
+        <div class="tscroll"><table>
+          <tr><th>Mundo</th><th>Tabuleiro</th><th>Palavras</th><th>Direções</th></tr>
+          <tr><td>1 Céu Noturno</td><td>6×6</td><td>3 → 4</td><td>→ ↓</td></tr>
+          <tr><td>2 Mar Profundo</td><td>8×8</td><td>4 → 6</td><td>→ ↓ ↘</td></tr>
+          <tr><td>3 Cozinha Aberta</td><td>8×8</td><td>6 → 8</td><td>+ ← ↑</td></tr>
+          <tr><td>4 Bicho Solto</td><td>10×10</td><td>6 → 9</td><td>→ ↓ ↘</td></tr>
+          <tr><td>5 Volta ao Mundo</td><td>10×10</td><td>8 → 11</td><td>+ ← ↑</td></tr>
+          <tr><td>6 Floresta Densa</td><td>10×10</td><td>10 → 12</td><td>as 8</td></tr>
+          <tr><td>7 Cidade Grande</td><td>12×12</td><td>8 → 12</td><td>+ ← ↑</td></tr>
+          <tr><td>8 Dia de Jogo</td><td>12×12</td><td>10 → 14</td><td>as 8</td></tr>
+          <tr><td>9 Casa Aberta</td><td>12×12</td><td>12 → 16</td><td>as 8</td></tr>
+          <tr><td>10 Corpo e Mente</td><td>12×12</td><td>14 → 18</td><td>as 8</td></tr>
+        </table></div>
+        <p style="color:var(--page-mute)">Em cada mundo, o nível 10 é cronometrado, o 20 é uma palavra misteriosa e o 30 é um chefe maior. No protótipo estão jogáveis os mundos 1 a 5; os outros aparecem bloqueados.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Modos e dificuldade</h2>
+        <div class="cards">
+          <div class="pcard"><h3>Jogo livre</h3><p>Escolhes tamanho, categoria e dificuldade: <b>Fácil</b> (menos palavras, só → e ↓), <b>Normal</b> ou <b>Difícil</b> (mais palavras, todas as direções, letras enganadoras).</p></div>
+          <div class="pcard"><h3>Desafio diário</h3><p>Um tabuleiro 10×10 igual para todos, uma vez por dia, com sequência de dias seguidos.</p></div>
+          <div class="pcard"><h3>Contra-relógio</h3><p>2, 3 ou 5 minutos. Cada tabuleiro completo dá +50 pontos e +10 s.</p></div>
+          <div class="pcard"><h3>Palavra misteriosa</h3><p>Sem lista. As letras que sobram formam a palavra final. Em 6×6, 8×8 e 10×10.</p></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Idiomas das palavras</h2>
+        <p style="color:var(--page-mute)">Português de Portugal (PT-PT) e inglês americano (EN-US), à escolha em Definições. O progresso da campanha é separado por idioma. A interface fica em português e a estrutura permite acrescentar mais idiomas depois.</p>
+      </section>
+
+      <section class="sec">
+        <h2>Ecrãs</h2>
+        <div class="rows">
+          <div class="row"><h3>Início</h3><p>Campanha (com retomar), desafio diário, três modos e acesso a estatísticas e definições.</p></div>
+          <div class="row"><h3>Campanha</h3><p>Seletor de mundo e mapa de 30 níveis com estrelas, nível atual destacado e bloqueios.</p></div>
+          <div class="row"><h3>Novo jogo</h3><p>Tamanho, categoria e dificuldade; no contra-relógio, a duração.</p></div>
+          <div class="row"><h3>Jogo</h3><p>O mesmo ecrã para os quatro modos, com pequenas variações no topo e na parte de baixo.</p></div>
+          <div class="row"><h3>Pausa</h3><p>Esconde o tabuleiro. Continuar, Reiniciar ou Sair.</p></div>
+          <div class="row"><h3>Vitória / fim</h3><p>Estrelas e tempo, ou pontuação e recorde no contra-relógio.</p></div>
+          <div class="row"><h3>Definições</h3><p>Idioma das palavras, tema, ajuda de direção, vibração, som, tamanho das letras e modo para daltónicos. Todas funcionam ao vivo no protótipo.</p></div>
+          <div class="row"><h3>Estatísticas</h3><p>Totais, melhor tempo por tamanho, recorde do contra-relógio e sequência diária.</p></div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Temas confirmados</h2>
+        <div class="pal-info">
+          <div><h3>Tinta &amp; Âmbar (predefinido)</h3><p>Azul-tinta profundo com âmbar como destaque.</p></div>
+          <div class="swatches">
+            <div class="swp"><i style="background:#0F1424"></i>#0F1424</div><div class="swp"><i style="background:#171E35"></i>#171E35</div><div class="swp"><i style="background:#1B2440"></i>#1B2440</div><div class="swp"><i style="background:#F4B860"></i>#F4B860</div><div class="swp"><i style="background:#7CC6FE"></i>#7CC6FE</div><div class="swp"><i style="background:#C3A6FF"></i>#C3A6FF</div><div class="swp"><i style="background:#8EE3C2"></i>#8EE3C2</div><div class="swp"><i style="background:#FF8FA3"></i>#FF8FA3</div>
+          </div>
+        </div>
+        <div class="pal-info">
+          <div><h3>Tokyo Night</h3><p>Fundo azul-ardósia, destaque azul e cores de palavra em roxo, verde, laranja e rosa.</p></div>
+          <div class="swatches">
+            <div class="swp"><i style="background:#1A1B26"></i>#1A1B26</div><div class="swp"><i style="background:#24283B"></i>#24283B</div><div class="swp"><i style="background:#292E42"></i>#292E42</div><div class="swp"><i style="background:#7AA2F7"></i>#7AA2F7</div><div class="swp"><i style="background:#BB9AF7"></i>#BB9AF7</div><div class="swp"><i style="background:#9ECE6A"></i>#9ECE6A</div><div class="swp"><i style="background:#FF9E64"></i>#FF9E64</div><div class="swp"><i style="background:#F7768E"></i>#F7768E</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <h2>Tamanhos do tabuleiro</h2>
+        <div class="tscroll"><table>
+          <tr><th>Tamanho</th><th>Palavras</th><th>Direções</th><th>Misteriosa</th></tr>
+          <tr><td>6×6</td><td>4</td><td>→ ↓</td><td>sim</td></tr>
+          <tr><td>8×8</td><td>6</td><td>→ ↓ ↘</td><td>sim</td></tr>
+          <tr><td>10×10</td><td>8</td><td>→ ↓ ↘ ← ↑</td><td>sim</td></tr>
+          <tr><td>12×12</td><td>10</td><td>as 8 direções</td><td>não</td></tr>
+        </table></div>
+      </section>
+
+      <section class="sec">
+        <h2>Ficam para depois</h2>
+        <div class="cards">
+          <div class="pcard"><h3>Criar a minha sopa</h3><p>Lista de palavras própria.</p></div>
+          <div class="pcard"><h3>Tema claro</h3><p>E opção de seguir o sistema.</p></div>
+          <div class="pcard"><h3>Conquistas e partilha</h3><p>Medalhas simples e resultado partilhável.</p></div>
+          <div class="pcard"><h3>Palavra misteriosa em 12×12</h3><p>Precisa de um gerador mais esperto.</p></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+var CFG = {
+  6:  { words: 4,  dirs: [[0,1],[1,0]] },
+  8:  { words: 6,  dirs: [[0,1],[1,0],[1,1]] },
+  10: { words: 8,  dirs: [[0,1],[1,0],[1,1],[0,-1],[-1,0]] },
+  12: { words: 10, dirs: [[0,1],[1,0],[1,1],[0,-1],[-1,0],[-1,-1],[1,-1],[-1,1]] }
+};
+var FILL = "AAAEEEIIOOOSSRRMNDTLCPUBG";
+var CATS = [
+  { id: "espaco", name: "Espaço", words: "SOL LUA LUZ CEU MARTE ASTRO NOITE SONHO NUVEM COMETA ORBITA AURORA SATURNO PLANETA GALAXIA FOGUETE NEBULOSA ECLIPSE CRATERA UNIVERSO ESTRELA JUPITER VENUS TELESCOPIO ESPACO ASTEROIDE GRAVIDADE MERCURIO NETUNO URANO PLUTAO POEIRA SONDA RADAR BRILHO VAZIO ESCURO ANEL SOLAR".split(" "),
+    mys: { 4: ["NAVE", "Transporta astronautas"], 5: ["TERRA", "O nosso planeta"], 6: ["ZENITE", "Ponto mais alto no céu"], 7: ["CAPSULA", "Traz astronautas de volta"], 8: ["SATELITE", "Gira à volta de um planeta"] } },
+  { id: "oceano", name: "Oceano", words: "MAR PEIXE POLVO CONCHA AREIA MARE ALGA NAVIO BARCO ANCORA FAROL GOLFINHO FOCA ORCA SARDINHA CARANGUEJO LULA MEDUSA RECIFE ILHA CAIS REDE VELA PORTO CORRENTE ESPUMA TEMPESTADE AGUA SAL ENGUIA RAIA".split(" "),
+    mys: { 4: ["ONDA", "Vem e vai na praia"], 5: ["CORAL", "Forma recifes coloridos"], 6: ["BALEIA", "Maior animal do mar"], 7: ["TUBARAO", "Tem barbatana no topo"], 8: ["PESCADOR", "Vive da pesca"] } },
+  { id: "comida", name: "Comida", words: "PAO QUEIJO ARROZ FEIJAO MASSA CARNE PEIXE OVO LEITE MANTEIGA FRUTA MACA PERA UVA LARANJA BANANA SALADA BOLO DOCE CAFE CHA SUMO BATATA CENOURA CEBOLA ALHO PIMENTA PASTEL".split(" "),
+    mys: { 4: ["SOPA", "Prato quente de colher"], 5: ["PIZZA", "Nasceu em Nápoles"], 6: ["TOMATE", "Fruto vermelho de salada"], 7: ["LASANHA", "Massa em camadas"], 8: ["AZEITONA", "Dá azeite"] } },
+  { id: "animais", name: "Animais", words: "GATO CAO CAVALO VACA PORCO OVELHA GALINHA PATO LOBO URSO RAPOSA TIGRE ZEBRA MACACO AGUIA CORUJA SAPO RATO TARTARUGA CROCODILO HIPOPOTAMO CAMELO CABRA BURRO PAPAGAIO FORMIGA ABELHA BORBOLETA".split(" "),
+    mys: { 4: ["LEAO", "Rei da selva"], 5: ["COBRA", "Rasteja e silva"], 6: ["COELHO", "Orelhas compridas"], 7: ["PINGUIM", "Ave que não voa e vive no gelo"], 8: ["ELEFANTE", "Tem tromba"] } },
+  { id: "paises", name: "Países", words: "PORTUGAL BRASIL ANGOLA INDIA JAPAO CHINA RUSSIA CANADA MEXICO EGITO GRECIA SUECIA NORUEGA TURQUIA IRAO IRAQUE NEPAL QUENIA MARROCOS TUNISIA ALEMANHA HOLANDA BELGICA POLONIA URUGUAI BOLIVIA".split(" "),
+    mys: { 4: ["PERU", "Casa de Machu Picchu"], 5: ["CHILE", "País comprido na América do Sul"], 6: ["ITALIA", "Tem forma de bota"], 7: ["ESPANHA", "Vizinha de Portugal"], 8: ["COLOMBIA", "Famosa pelo café"] } }
+];
+var CATS_EN = [
+  { id: "espaco", name: "Espaço", words: "SUN MOON STAR MARS VENUS EARTH ORBIT COMET GALAXY PLANET ROCKET ECLIPSE CRATER UNIVERSE NEBULA JUPITER SATURN URANUS NEPTUNE PLUTO MERCURY ASTEROID GRAVITY TELESCOPE COSMOS METEOR SATELLITE SOLAR LUNAR DUST RING PROBE RADAR LIGHT NIGHT DARK VOID ALIEN APOLLO SPACE".split(" "),
+    mys: { 4: ["NOVA", "A star that suddenly shines bright"], 5: ["TITAN", "Largest moon of Saturn"], 6: ["ZENITH", "Highest point in the sky"], 7: ["CAPSULE", "Brings astronauts home"], 8: ["STARSHIP", "A ship that travels between stars"] } },
+  { id: "oceano", name: "Oceano", words: "SEA FISH OCTOPUS SHELL SAND TIDE ALGAE SHIP BOAT ANCHOR LIGHTHOUSE DOLPHIN SEAL ORCA SARDINE CRAB SQUID JELLYFISH REEF ISLAND PIER NET SAIL HARBOR CURRENT FOAM STORM WATER SALT EEL RAY SHARK WHALE TURTLE".split(" "),
+    mys: { 4: ["WAVE", "Rolls onto the beach"], 5: ["CORAL", "Builds colorful reefs"], 6: ["SAILOR", "Works on a ship"], 7: ["SEAWEED", "Green plant of the sea"], 8: ["SEAHORSE", "Tiny fish with a horse-like head"] } },
+  { id: "comida", name: "Comida", words: "BREAD CHEESE RICE BEANS PASTA MEAT FISH EGG MILK BUTTER FRUIT APPLE PEAR GRAPE ORANGE BANANA SALAD CAKE SWEET COFFEE TEA JUICE POTATO CARROT ONION GARLIC PEPPER PANCAKE COOKIE HONEY SUGAR SALT".split(" "),
+    mys: { 4: ["SOUP", "Hot dish eaten with a spoon"], 5: ["PIZZA", "Italian dish with cheese"], 6: ["TOMATO", "Red fruit used in salads"], 7: ["LASAGNA", "Layers of pasta"], 8: ["SANDWICH", "Filling between two slices of bread"] } },
+  { id: "animais", name: "Animais", words: "CAT DOG HORSE COW PIG SHEEP CHICKEN DUCK WOLF BEAR FOX TIGER ZEBRA MONKEY EAGLE OWL FROG MOUSE TURTLE CROCODILE HIPPO CAMEL GOAT DONKEY PARROT ANT BEE BUTTERFLY GIRAFFE".split(" "),
+    mys: { 4: ["LION", "King of the jungle"], 5: ["SNAKE", "Slithers and hisses"], 6: ["RABBIT", "Has long ears"], 7: ["PENGUIN", "Bird that swims and cannot fly"], 8: ["ELEPHANT", "Has a trunk"] } },
+  { id: "paises", name: "Países", words: "PORTUGAL BRAZIL ANGOLA INDIA JAPAN CHINA RUSSIA CANADA MEXICO EGYPT GREECE SWEDEN NORWAY TURKEY IRAN IRAQ NEPAL KENYA MOROCCO TUNISIA GERMANY NETHERLANDS BELGIUM POLAND URUGUAY BOLIVIA ITALY SPAIN ENGLAND IRELAND".split(" "),
+    mys: { 4: ["PERU", "Home of Machu Picchu"], 5: ["CHILE", "Long country in South America"], 6: ["FRANCE", "Country of the Eiffel Tower"], 7: ["AUSTRIA", "Land of Mozart"], 8: ["COLOMBIA", "Famous for its coffee"] } }
+];
+var LANGS = {
+  pt: { label: "PT-PT", cats: CATS, fill: "AAAEEEIIOOOSSRRMNDTLCPUBG" },
+  en: { label: "EN-US", cats: CATS_EN, fill: "EEEEAAARRIIOOTTNNSSLLCUDPMHGBF" }
+};
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function shuffle(a, rnd) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+function tryPlace(letters, n, w, dirs, rnd) {
+  for (var tries = 0; tries < 300; tries++) {
+    var d = dirs[Math.floor(rnd() * dirs.length)];
+    var r = Math.floor(rnd() * n), c = Math.floor(rnd() * n);
+    var er = r + d[0] * (w.length - 1), ec = c + d[1] * (w.length - 1);
+    if (er < 0 || er >= n || ec < 0 || ec >= n) continue;
+    var path = [], ok = true;
+    for (var k = 0; k < w.length; k++) {
+      var idx = (r + d[0] * k) * n + c + d[1] * k;
+      if (letters[idx] && letters[idx] !== w[k]) { ok = false; break; }
+      path.push(idx);
+    }
+    if (!ok) continue;
+    path.forEach(function (idx, k) { letters[idx] = w[k]; });
+    return path;
+  }
+  return null;
+}
+function fillRandom(letters, rnd) { for (var i = 0; i < letters.length; i++) if (!letters[i]) letters[i] = FILL[Math.floor(rnd() * FILL.length)]; }
+function genClassic(n, bank, seed) {
+  var rnd = mulberry32(seed), cfg = CFG[n], letters = new Array(n * n).fill(""), words = [];
+  var cands = shuffle(bank.filter(function (w) { return w.length >= 3 && w.length <= n; }), rnd);
+  for (var i = 0; i < cands.length && words.length < cfg.words; i++) {
+    var p = tryPlace(letters, n, cands[i], cfg.dirs, rnd);
+    if (p) words.push({ w: cands[i], cells: p });
+  }
+  fillRandom(letters, rnd);
+  return { n: n, letters: letters, words: words, mystery: null };
+}
+function genMysteryOnce(n, cat, seed) {
+  var rnd = mulberry32(seed), cfg = CFG[n], letters = new Array(n * n).fill(""), words = [];
+  var cands = shuffle(cat.words.filter(function (w) { return w.length >= 3 && w.length <= n; }), rnd);
+  var done = false;
+  for (var i = 0; i < cands.length && !done; i++) {
+    var snap = letters.slice();
+    var p = tryPlace(letters, n, cands[i], cfg.dirs, rnd);
+    if (!p) continue;
+    var e = letters.filter(function (x) { return !x; }).length;
+    if (e < 4) { for (var k = 0; k < letters.length; k++) letters[k] = snap[k]; continue; }
+    words.push({ w: cands[i], cells: p });
+    if (e <= 8) done = true;
+  }
+  if (!done) return null;
+  var left = [];
+  letters.forEach(function (x, idx) { if (!x) left.push(idx); });
+  var m = cat.mys[left.length];
+  if (!m) return null;
+  left.forEach(function (idx, k) { letters[idx] = m[0][k]; });
+  return { n: n, letters: letters, words: words, mystery: { word: m[0], clue: m[1], cells: left } };
+}
+function genMystery(n, cat, seed) {
+  for (var a = 0; a < 400; a++) { var r = genMysteryOnce(n, cat, seed + a); if (r) return r; }
+  if (n > 8) return genMystery(8, cat, seed);
+  return genClassic(n, cat.words, seed);
+}
+var D = { 2: [[0,1],[1,0]], 3: [[0,1],[1,0],[1,1]], 5: [[0,1],[1,0],[1,1],[0,-1],[-1,0]], 8: [[0,1],[1,0],[1,1],[0,-1],[-1,0],[-1,-1],[1,-1],[-1,1]] };
+var CAPS = { 6: 5, 8: 9, 10: 12, 12: 18 };
+function diffParams(n, diff) {
+  var cfg = CFG[n];
+  if (diff === "easy") return { n: n, words: Math.max(3, cfg.words - 1), dirs: n >= 10 ? D[3] : D[2], decoy: 0 };
+  if (diff === "hard") return { n: n, words: Math.min(CAPS[n], cfg.words + 2), dirs: D[8], decoy: 0.8 };
+  return { n: n, words: cfg.words, dirs: cfg.dirs, decoy: 0.2 };
+}
+function countOcc(letters, n, w) {
+  var c = 0;
+  for (var r = 0; r < n; r++) for (var q = 0; q < n; q++) D[8].forEach(function (d) {
+    for (var k = 0; k < w.length; k++) {
+      var rr = r + d[0] * k, cc = q + d[1] * k;
+      if (rr < 0 || rr >= n || cc < 0 || cc >= n || letters[rr * n + cc] !== w[k]) return;
+    }
+    c++;
+  });
+  return c;
+}
+function genOnce(pm, bank, seed, fill) {
+  var n = pm.n, rnd = mulberry32(seed), letters = new Array(n * n).fill(""), words = [];
+  var cands = shuffle(bank.filter(function (w) { return w.length >= 3 && w.length <= n; }), rnd);
+  for (var i = 0; i < cands.length && words.length < pm.words; i++) {
+    var p = tryPlace(letters, n, cands[i], pm.dirs, rnd);
+    if (p) words.push({ w: cands[i], cells: p });
+  }
+  var nd = Math.round(pm.decoy * words.length * 0.5);
+  for (var k = 0; k < nd; k++) {
+    var src = words[Math.floor(rnd() * words.length)].w;
+    if (src.length >= 5) tryPlace(letters, n, src.slice(0, src.length - 2), pm.dirs, rnd);
+  }
+  for (var j = 0; j < letters.length; j++) if (!letters[j]) letters[j] = fill[Math.floor(rnd() * fill.length)];
+  return { n: n, letters: letters, words: words, mystery: null };
+}
+function generate(pm, bank, seed, fill) {
+  var best = null;
+  for (var a = 0; a < 8; a++) {
+    var p = genOnce(pm, bank, seed + a * 977, fill);
+    var ok = p.words.length >= pm.words && p.words.every(function (w) { return countOcc(p.letters, p.n, w.w) === 1; });
+    if (ok) return p;
+    if (!best || p.words.length > best.words.length) best = p;
+  }
+  return best;
+}
+var WORLDS = [
+  { name: "Céu Noturno", cat: 0, n: 6, w: [3, 4], dirs: 2, decoy: 0 },
+  { name: "Mar Profundo", cat: 1, n: 8, w: [4, 6], dirs: 3, decoy: 0 },
+  { name: "Cozinha Aberta", cat: 2, n: 8, w: [6, 8], dirs: 5, decoy: 0.2 },
+  { name: "Bicho Solto", cat: 3, n: 10, w: [6, 9], dirs: 3, decoy: 0.2 },
+  { name: "Volta ao Mundo", cat: 4, n: 10, w: [8, 11], dirs: 5, decoy: 0.4 },
+  { name: "Floresta Densa", cat: 5, n: 10, w: [10, 12], dirs: 8, decoy: 0.5 },
+  { name: "Cidade Grande", cat: 6, n: 12, w: [8, 12], dirs: 5, decoy: 0.5 },
+  { name: "Dia de Jogo", cat: 7, n: 12, w: [10, 14], dirs: 8, decoy: 0.6 },
+  { name: "Casa Aberta", cat: 8, n: 12, w: [12, 16], dirs: 8, decoy: 0.8 },
+  { name: "Corpo e Mente", cat: 9, n: 12, w: [14, 18], dirs: 8, decoy: 1 }
+];
+var LEVELS_PER_WORLD = 30;
+function levelInfo(L) {
+  var wi = Math.floor((L - 1) / LEVELS_PER_WORLD), l = (L - 1) % LEVELS_PER_WORLD, W = WORLDS[wi], num = l + 1;
+  var n = W.n, words = Math.round(W.w[0] + (W.w[1] - W.w[0]) * l / (LEVELS_PER_WORLD - 1)), dk = W.dirs, kind = "normal";
+  if (num === 10) kind = "timed";
+  if (num === 20) { kind = "mystery"; n = Math.min(n, 10); }
+  if (num === 30) { kind = "boss"; words = Math.min(CAPS[n], W.w[1] + 2); dk = 8; }
+  return { L: L, world: wi, num: num, kind: kind, n: n, words: Math.min(words, CAPS[n]), dirs: D[dk], dirsCount: dk, decoy: W.decoy, cat: W.cat, seed: L * 7919 };
+}
+function levelParams(info) { return { n: info.n, words: info.words, dirs: info.dirs, decoy: info.decoy }; }
+function lineCells(a, b, n) {
+  var ar = Math.floor(a / n), ac = a % n, br = Math.floor(b / n), bc = b % n;
+  var dr = br - ar, dc = bc - ac, len = Math.max(Math.abs(dr), Math.abs(dc));
+  if (!(dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc))) return [a];
+  var out = [];
+  for (var k = 0; k <= len; k++) out.push((ar + Math.sign(dr) * k) * n + ac + Math.sign(dc) * k);
+  return out;
+}
+var SNAP_DIRS = [[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1],[-1,0],[-1,1]]; // (dr, dc), clockwise from "right"
+// a: start cell index; vx, vy: pointer offset from the CENTER of the start cell, in cell pitches (x = columns, y = rows, y grows downwards)
+function snapLine(a, vx, vy, n) {
+  var dist = Math.sqrt(vx * vx + vy * vy);
+  if (dist < 0.6) return [a];
+  var sector = ((Math.round(Math.atan2(vy, vx) / (Math.PI / 4)) % 8) + 8) % 8;
+  var d = SNAP_DIRS[sector], dr = d[0], dc = d[1];
+  var k = Math.round((vx * dc + vy * dr) / (dr * dr + dc * dc));
+  var r0 = Math.floor(a / n), c0 = a % n, out = [a];
+  for (var s = 1; s <= k; s++) {
+    var r = r0 + dr * s, c = c0 + dc * s;
+    if (r < 0 || r >= n || c < 0 || c >= n) break;
+    out.push(r * n + c);
+  }
+  return out;
+}
+
+
+/* ===== STATE ===== */
+var MONTHS = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+function ymd(d) { return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+function addDays(d, k) { var x = new Date(d.getTime()); x.setDate(x.getDate() + k); return x; }
+var NOW = new Date(), TODAY = ymd(NOW), YEST = ymd(addDays(NOW, -1));
+var KEY = "sopa.proto.v3";
+function defaults() {
+  var pt = {}; for (var L = 1; L <= 46; L++) pt[L] = [3, 2, 3, 1, 3, 2][L % 6];
+  return { theme: "a", snap: true, lang: "pt", diff: "normal", camp: { pt: pt, en: {} }, haptics: true, sound: true, ls: 1, cb: false, lastSize: 8, lastCat: 0, lastDur: 180,
+    st: { wins: 23, words: 148, best: { 6: 41, 8: 84, 10: 182, 12: 0 }, taBest: 1240, mystery: 3, streak: 5, last: YEST, daily: null } };
+}
+var S = defaults();
+try { var raw = localStorage.getItem(KEY); if (raw) { var j = JSON.parse(raw); S = Object.assign(defaults(), j); } } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+var $ = function (id) { return document.getElementById(id); };
+var phone = $("phone"), screenEl = $("screen"), ov = $("ov"), sheet = $("sheet"), toastEl = $("toast");
+var screen = "home", G = null, saved = null, campWorld = 1, SU = { mode: "classic", n: S.lastSize, cat: S.lastCat, dur: S.lastDur, diff: S.diff };
+var MAXPLAY = 150; // prototype ships worlds 1-5 only (worlds 6-10 are shown locked)
+var gridEl, cells = [], refs = {};
+
+function fmt(s) { s = Math.max(0, Math.floor(s)); var m = Math.floor(s / 60), r = s % 60; return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r; }
+function streakNow() { return (S.st.last === TODAY || S.st.last === YEST) ? S.st.streak : 0; }
+function CT() { return LANGS[S.lang].cats; }
+function prog() { return S.camp[S.lang] || (S.camp[S.lang] = {}); }
+function nextLevelNum() { var L = 1; while (prog()[L]) L++; return L; }
+function totalStars() { var s = 0; Object.keys(prog()).forEach(function (k) { s += prog()[k]; }); return s; }
+var CATNAMES = ["Espaço", "Oceano", "Comida", "Animais", "Países", "Natureza", "Cidade", "Desporto", "Casa", "Corpo humano"];
+var DIFFN = { easy: "Fácil", normal: "Normal", hard: "Difícil" };
+function dayCat() { return CATS[Math.floor(Date.UTC(NOW.getFullYear(), NOW.getMonth(), NOW.getDate()) / 864e5) % CATS.length]; }
+function dailyDone() { return S.st.daily && S.st.daily.date === TODAY; }
+function randSeed() { return Math.floor(Math.random() * 1e9) + 1; }
+function stripAcc(s) { return s.normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+
+var ICON = {
+  back: '<path d="M15 5l-7 7 7 7"/>', chev: '<path d="M9 5l7 7-7 7"/>',
+  grid: '<path d="M5 5h5v5H5zM14 5h5v5h-5zM5 14h5v5H5zM14 14h5v5h-5z"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  q: '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1.1 1-1.1 1.8M12 17h.01"/>',
+  cal: '<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/>',
+  chart: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  sliders: '<path d="M4 7h9M19 7h1M4 17h1M11 17h9"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  flame: '<path d="M12 3c1 4 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-4-1-5 1-9z"/>',
+  play: '<path d="M8 5l11 7-11 7z"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  crown: '<path d="M4 17L3 8l5 4 4-7 4 7 5-4-1 9z"/>',
+  map: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>'
+};
+function ico(n, extra) { return '<svg class="ic ' + (extra || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[n] + '</svg>'; }
+
+/* ===== FEEDBACK ===== */
+var AC;
+function tone(freqs) {
+  if (!S.sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    var t = AC.currentTime;
+    freqs.forEach(function (f, i) {
+      var o = AC.createOscillator(), g = AC.createGain(), s = t + i * 0.11;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(0.07, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.3);
+      o.connect(g); g.connect(AC.destination); o.start(s); o.stop(s + 0.32);
+    });
+  } catch (e) {}
+}
+function buzz(ms) { if (S.haptics && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} } }
+function toast(txt) { toastEl.textContent = txt; toastEl.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { toastEl.hidden = true; }, 1400); }
+
+/* ===== GAME MODEL ===== */
+function bankFor(cat) { return CT()[cat].words; }
+function makePuzzle(mode, n, cat, seed, pm) {
+  if (mode === "mystery") return genMystery(n, CT()[cat], seed);
+  return generate(pm || diffParams(n, "normal"), bankFor(cat), seed, LANGS[S.lang].fill);
+}
+function makeGame(mode, o) {
+  var n = o.n, cat = o.cat, seed = o.seed || randSeed();
+  var g = { mode: mode, n: n, cat: cat, seed: seed, found: {}, cellColor: {}, hints: {}, hintsUsed: 0, elapsed: o.elapsed || 0, over: false, paused: false,
+    timeLeft: o.dur || 0, total: o.dur || 0, score: 0, boards: 1, lastFind: 0, wordsTotal: 0, closeCalls: 0 };
+  if (o.camp) { g.camp = o.camp; g.P = makePuzzle(mode, n, cat, seed, levelParams(o.camp)); }
+  else { g.diff = o.diff || "normal"; g.P = makePuzzle(mode, n, cat, seed, mode === "classic" ? diffParams(n, g.diff) : null); }
+  g.n = g.P.n;
+  if (o.camp && o.camp.kind === "timed") { g.limit = Math.ceil(parFor(g) * 1.3); g.timeLeft = g.limit; }
+  return g;
+}
+function nextColor(g) {
+  var used = Object.keys(g.found).map(function (k) { return g.found[k]; });
+  for (var c = 0; c < 5; c++) if (used.indexOf(c) === -1) return c;
+  return used.length % 5;
+}
+function markFound(g, wi, ci) { g.found[wi] = ci; g.P.words[wi].cells.forEach(function (i) { g.cellColor[i] = ci; }); }
+function foundCount(g) { return Object.keys(g.found).length; }
+function titleOf(g) { return g.camp ? WORLDS[g.camp.world].name : g.mode === "daily" ? "Desafio diário" : g.mode === "time" ? "Contra-relógio" : g.mode === "mystery" ? "Palavra misteriosa" : CATS[g.cat].name; }
+function subOf(g) {
+  if (g.camp) return "Nível " + g.camp.L + " · " + g.n + "×" + g.n + ({ timed: " · Cronometrado", mystery: " · Misteriosa", boss: " · Chefe", normal: "" })[g.camp.kind];
+  if (g.mode === "classic") return "Jogo livre · " + g.n + "×" + g.n + " · " + DIFFN[g.diff];
+  if (g.mode === "daily") return CATS[g.cat].name + " · 10×10";
+  if (g.mode === "time") return "Pontos <b>" + g.score + "</b> · Tabuleiro " + g.boards;
+  return CATS[g.cat].name + " · " + g.n + "×" + g.n;
+}
+
+/* ===== SCREENS ===== */
+function setScreen(s) { screen = s; hideOv(); sheet.hidden = true; render(); markJump(); }
+function render() {
+  phone.dataset.pal = S.theme; phone.style.setProperty("--ls", S.ls); phone.classList.toggle("cb", S.cb);
+  if (screen === "home") return renderHome();
+  if (screen === "setup") return renderSetup();
+  if (screen === "camp") return renderCamp();
+  if (screen === "game") return renderGame();
+  if (screen === "settings") return renderSettings();
+  if (screen === "stats") return renderStats();
+}
+function renderHome() {
+  var dc = dayCat(), done = dailyDone(), st = streakNow(), h = "", nl = nextLevelNum(), info = levelInfo(Math.min(nl, 300));
+  h += '<div class="hero"><h2>Sopa de Letras</h2><p>Encontra palavras entre as estrelas.</p></div>';
+  var resume = saved && saved.camp;
+  h += '<button class="card" data-a="' + (resume ? "resume" : "camp") + '"><span class="k">Campanha · ' + Object.keys(prog()).length + ' de 300 níveis</span><span class="t">Mundo ' + (info.world + 1) + ' · ' + WORLDS[info.world].name + '</span>';
+  h += '<span class="m">' + (resume ? 'Retomar nível ' + saved.camp.L + ' · ' + fmt(saved.elapsed) + ' · ' + foundCount(saved) + ' de ' + saved.P.words.length + ' palavras' : 'Nível ' + nl + ' · ' + info.n + '×' + info.n + ' · ★ ' + totalStars()) + '</span>';
+  h += '<span class="mini"><div style="width:' + (Object.keys(prog()).length / 3) + '%"></div></span><span class="pill">' + (resume ? 'Retomar' : 'Jogar nível ' + nl) + '</span></button>';
+  h += '<div class="card daily"><span class="k">Desafio diário · ' + NOW.getDate() + ' ' + MONTHS[NOW.getMonth()] + '</span><span class="t">' + dc.name + ' · 10×10</span><span class="m"><span class="flame">' + ico("flame") + st + ' ' + (st === 1 ? 'dia' : 'dias') + ' seguidos</span></span>';
+  h += done ? '<span class="pill done">Concluído · ' + fmt(S.st.daily.seconds) + ' · ' + "★".repeat(S.st.daily.stars) + '</span>' : '<button class="pill" data-a="daily" style="border:0;cursor:pointer">Jogar</button>';
+  h += '</div>';
+  h += row("classic", "grid", "Jogo livre", "Tamanho, categoria e dificuldade");
+  h += row("time", "clock", "Contra-relógio", "Quantas palavras em 3 minutos");
+  h += row("mystery", "q", "Palavra misteriosa", "Sem lista, só uma pista");
+  h += '<div class="foot"><button class="btn" data-a="stats">' + ico("chart") + 'Estatísticas</button><button class="btn" data-a="settings">' + ico("sliders") + 'Definições</button></div>';
+  screenEl.innerHTML = h;
+}
+function row(mode, ic, t, m) { return '<button class="rowitem" data-a="setup" data-v="' + mode + '"><span class="ico">' + ico(ic) + '</span><span class="tx"><span class="t">' + t + '</span><span class="m">' + m + '</span></span><span class="chev">' + ico("chev") + '</span></button>'; }
+
+function worldUnlocked(w) { return nextLevelNum() >= w * 30 + 1; }
+function renderCamp() {
+  var w = campWorld - 1, W = WORLDS[w], nl = nextLevelNum(), first = w * 30 + 1, info = levelInfo(first), last = levelInfo(first + 28);
+  var done = 0, stars = 0; for (var i = 0; i < 30; i++) { var s = prog()[first + i]; if (s) { done++; stars += s; } }
+  var h = '<div class="hdr"><button class="back" data-a="home" aria-label="Voltar">' + ico("back") + '</button><span class="ttl">Campanha</span></div>';
+  h += '<div class="worlds">' + WORLDS.map(function (x, k) { var lk = !worldUnlocked(k), cur = k + 1 === campWorld; return '<button class="wb" data-a="world" data-v="' + (k + 1) + '" aria-pressed="' + cur + '" aria-label="Mundo ' + (k + 1) + (lk ? ' bloqueado' : '') + '"' + (lk ? ' data-lock="1"' : '') + '>' + (lk ? ico("lock") : (k + 1)) + '</button>'; }).join("") + '</div>';
+  h += '<div class="card" style="gap:4px"><span class="k">Mundo ' + campWorld + ' · ' + CATNAMES[W.cat] + '</span><span class="t">' + W.name + '</span><span class="m">' + info.n + '×' + info.n + ' · ' + info.words + ' a ' + last.words + ' palavras · ' + info.dirsCount + ' direções</span><span class="mini"><div style="width:' + (done / 30 * 100) + '%"></div></span><span class="m">' + done + ' de 30 · ★ ' + stars + ' de 90</span></div>';
+  h += '<div class="nodes">';
+  for (var k = 0; k < 30; k++) {
+    var L = first + k, inf = levelInfo(L), st2 = prog()[L], locked = L > nl, cur = L === nl;
+    var badge = inf.kind === "timed" ? ico("clock", "nb") : inf.kind === "mystery" ? ico("q", "nb") : inf.kind === "boss" ? ico("crown", "nb") : "";
+    h += '<button class="node' + (st2 ? ' done' : '') + (cur ? ' cur' : '') + (locked ? ' lock' : '') + '" data-a="level" data-v="' + L + '" style="' + (st2 ? 'background:var(--f' + (w % 5) + ')' : '') + '" aria-label="Nível ' + L + '">' + badge + '<span class="nn">' + (k + 1) + '</span><span class="ns">' + (st2 ? "★".repeat(st2) : "") + '</span></button>';
+  }
+  h += '</div><p class="desc" style="text-align:center">Nível 10 cronometrado · 20 palavra misteriosa · 30 chefe</p>';
+  screenEl.innerHTML = h;
+}
+function dirsText(n) { var k = CFG[n].dirs.length; return k + " direções"; }
+function renderSetup() {
+  var m = SU.mode, sizes = m === "mystery" ? [6, 8, 10] : [6, 8, 10, 12];
+  if (sizes.indexOf(SU.n) === -1) SU.n = 8;
+  var names = { classic: "Jogo livre", time: "Contra-relógio", mystery: "Palavra misteriosa" };
+  var h = '<div class="hdr"><button class="back" data-a="home" aria-label="Voltar">' + ico("back") + '</button><span class="ttl">' + names[m] + '</span></div>';
+  h += '<span class="lbl">Tamanho</span><div class="seg" role="group">' + sizes.map(function (n) { return '<button data-a="size" data-v="' + n + '" aria-pressed="' + (n === SU.n) + '">' + n + '×' + n + '</button>'; }).join("") + '</div>';
+  var pm = diffParams(SU.n, SU.diff);
+  var d = m === "classic" ? SU.n + "×" + SU.n + " · " + pm.words + " palavras · " + pm.dirs.length + " direções" : m === "mystery" ? SU.n + "×" + SU.n + " · " + dirsText(SU.n) + " · palavras escondidas" : SU.n + "×" + SU.n + " · " + CFG[SU.n].words + " palavras · " + dirsText(SU.n);
+  h += '<p class="desc">' + d + '</p>';
+  if (m === "classic") h += '<span class="lbl">Dificuldade</span><div class="seg">' + ["easy", "normal", "hard"].map(function (x) { return '<button data-a="diff" data-v="' + x + '" aria-pressed="' + (x === SU.diff) + '">' + DIFFN[x] + '</button>'; }).join("") + '</div><p class="desc">' + ({ easy: "Menos palavras, só para a direita e para baixo.", normal: "O equilíbrio habitual para o tamanho.", hard: "Mais palavras, todas as direções e letras enganadoras." })[SU.diff] + '</p>';
+  if (m === "time") {
+    h += '<span class="lbl">Duração</span><div class="seg">' + [120, 180, 300].map(function (s) { return '<button data-a="dur" data-v="' + s + '" aria-pressed="' + (s === SU.dur) + '">' + fmt(s) + '</button>'; }).join("") + '</div>';
+    h += '<p class="desc">Cada tabuleiro completo dá +50 pontos e +10 s.</p>';
+  }
+  if (m === "mystery") h += '<p class="desc">As letras que sobram, lidas por ordem, formam a palavra final.</p>';
+  h += '<span class="lbl">Categoria</span><div class="cats">' + CATS.map(function (c, i) { return '<button class="cat" data-a="cat" data-v="' + i + '" aria-pressed="' + (i === SU.cat) + '"><span class="dot" style="background:var(--f' + i + ')"></span><span class="t">' + c.name + '</span><span class="m">' + c.words.length + ' palavras</span></button>'; }).join("") + '</div>';
+  h += '<div class="hint"><button class="btn pri" data-a="start" style="padding:14px 0">' + ico("play") + 'Começar</button></div>';
+  screenEl.innerHTML = h;
+}
+
+function renderSettings() {
+  var h = '<div class="hdr"><button class="back" data-a="home" aria-label="Voltar">' + ico("back") + '</button><span class="ttl">Definições</span></div>';
+  h += '<div class="set"><div class="r" style="display:block"><span>Idioma das palavras<small>Aplica-se aos próximos jogos</small></span><div class="seg" style="margin-top:8px">' + [["pt", "PT-PT"], ["en", "EN-US"]].map(function (x) { return '<button data-a="lang" data-v="' + x[0] + '" aria-pressed="' + (S.lang === x[0]) + '">' + x[1] + '</button>'; }).join("") + '</div></div><div class="r" style="display:block;padding-bottom:0"><span>Tema</span></div><div class="themes">' +
+    theme("a", "Tinta &amp; Âmbar", "#0F1424", "#171E35", "#F4B860") + theme("t", "Tokyo Night", "#1A1B26", "#24283B", "#7AA2F7") + '</div>';
+  h += tog("snap", "Ajuda de direção", "Encaixa o arrasto na direção mais próxima") + tog("haptics", "Vibração", "Toque suave a cada letra") + tog("sound", "Som", "Sons curtos e graves");
+  h += '<div class="r" style="display:block;border-top:1px solid var(--cell);padding-bottom:0"><span>Tamanho das letras</span><div class="range"><input id="ls" type="range" min="85" max="125" value="' + Math.round(S.ls * 100) + '" aria-label="Tamanho das letras"><span class="pvl">A</span></div></div>';
+  h += tog("cb", "Modo para daltónicos", "Símbolo extra em cada cor") + '</div>';
+  h += '<button class="btn ghost" data-a="reset" style="flex:none;padding:12px 0">Repor dados de demonstração</button>';
+  screenEl.innerHTML = h;
+  $("ls").addEventListener("input", function (e) { S.ls = +e.target.value / 100; phone.style.setProperty("--ls", S.ls); save(); });
+}
+function theme(id, name, a, b, c) { return '<button class="theme" data-a="theme" data-v="' + id + '" aria-pressed="' + (S.theme === id) + '"><span class="pv" style="background:' + a + '"><i style="background:' + b + ';width:100%"></i><i style="background:' + c + ';width:55%"></i></span>' + name + '</button>'; }
+function tog(k, t, m) { return '<div class="r"><span>' + t + '<small>' + m + '</small></span><button class="sw" role="switch" data-a="tog" data-v="' + k + '" aria-checked="' + !!S[k] + '" aria-label="' + t + '"></button></div>'; }
+
+function renderStats() {
+  var s = S.st, h = '<div class="hdr"><button class="back" data-a="home" aria-label="Voltar">' + ico("back") + '</button><span class="ttl">Estatísticas</span></div>';
+  h += '<div class="stats"><div class="stat"><b>' + s.wins + '</b><span>Partidas ganhas</span></div><div class="stat"><b>' + s.words + '</b><span>Palavras encontradas</span></div><div class="stat"><b>' + streakNow() + '</b><span>Dias seguidos</span></div><div class="stat"><b>' + s.mystery + '</b><span>Palavras misteriosas</span></div></div>';
+  h += '<span class="lbl">Melhor tempo · jogo livre</span><div class="best">' + [6, 8, 10, 12].map(function (n) { return '<div class="r"><span>' + n + '×' + n + '</span><span>' + (s.best[n] ? fmt(s.best[n]) : "—") + '</span></div>'; }).join("") + '</div>';
+  h += '<span class="lbl">Recordes</span><div class="best"><div class="r"><span>Contra-relógio</span><span>' + s.taBest + ' pts</span></div><div class="r"><span>Campanha (' + LANGS[S.lang].label + ')</span><span>' + Object.keys(prog()).length + '/300 · ★ ' + totalStars() + '</span></div><div class="r"><span>Desafio de hoje</span><span>' + (dailyDone() ? fmt(s.daily.seconds) + " · " + "★".repeat(s.daily.stars) : "por jogar") + '</span></div></div>';
+  screenEl.innerHTML = h;
+}
+
+/* ===== GAME SCREEN ===== */
+function renderGame() {
+  var g = G, mys = g.mode === "mystery", h = "";
+  h += '<div class="topbar"><div><div class="ttl">' + titleOf(g) + '</div><div class="sub" id="sub"></div></div><div class="chip" id="chip">' + ico("clock") + '<b id="time"></b></div></div>';
+  h += '<div class="prog"><div id="prog"></div></div>';
+  h += '<div class="board"><div class="grid" id="grid" aria-label="Tabuleiro de letras"></div></div>';
+  if (mys) h += '<div class="clue"><span class="ct">Pista · <b>' + g.P.mystery.clue + '</b></span><div class="slots" id="slots"></div></div>';
+  h += '<div class="words" id="words"></div>';
+  h += '<div class="hint"><button class="btn" data-a="hint" id="hintBtn"></button>' + (mys ? '<button class="btn" data-a="pause">Pausa</button><button class="btn pri" data-a="guess">Adivinhar</button>' : '<button class="btn pri" data-a="pause">Pausa</button>') + '</div>';
+  screenEl.innerHTML = h;
+  gridEl = $("grid");
+  buildGrid(); bindGrid(); updateAll();
+}
+function buildGrid() {
+  var g = G, n = g.n;
+  gridEl.style.gridTemplateColumns = "repeat(" + n + ", 1fr)"; gridEl.style.setProperty("--n", n); gridEl.dataset.n = n;
+  gridEl.innerHTML = ""; cells = [];
+  g.P.letters.forEach(function (ch, i) { var d = document.createElement("div"); d.className = "c"; d.textContent = ch; d.dataset.i = i; gridEl.appendChild(d); cells.push(d); });
+}
+function updateAll() { updateCells(); updateWords(); updateTop(); }
+function updateCells() {
+  var g = G, allFound = g.P.words.length && foundCount(g) === g.P.words.length;
+  cells.forEach(function (el, i) {
+    var ci = g.cellColor[i], on = ci !== undefined;
+    el.className = "c" + (on ? " fnd s" + ci : "") + (g.mode === "mystery" && allFound && g.P.mystery.cells.indexOf(i) !== -1 ? " left" : "");
+    el.style.background = on ? "var(--f" + ci + ")" : "";
+    el.style.boxShadow = g.hints[i] ? "inset 0 0 0 2px var(--accent)" : "";
+  });
+}
+function updateWords() {
+  var g = G, el = $("words"), mys = g.mode === "mystery"; el.innerHTML = "";
+  g.P.words.forEach(function (o, wi) {
+    var s = document.createElement("span"), f = g.found[wi] !== undefined;
+    s.className = "w" + (f ? " done s" + g.found[wi] : "") + (!f && mys ? " hid" : "");
+    if (f) s.style.background = "var(--f" + g.found[wi] + ")";
+    s.textContent = f || !mys ? o.w : "•".repeat(o.w.length);
+    el.appendChild(s);
+  });
+  var hb = $("hintBtn");
+  if (g.mode === "time") hb.innerHTML = 'Pista <span class="cnt">−5 s</span>';
+  else { var left = 3 - g.hintsUsed; hb.innerHTML = 'Pista <span class="cnt">' + left + '</span>'; hb.disabled = left <= 0; }
+  if (mys) {
+    var m = g.P.mystery, all = foundCount(g) === g.P.words.length, reveal = all || g.solved, sl = $("slots");
+    sl.innerHTML = m.word.split("").map(function (ch) { return '<span class="slot">' + (reveal ? ch : "") + '</span>'; }).join("");
+  }
+}
+function updateTop() {
+  var g = G; if (!g || screen !== "game") return;
+  var sub = $("sub"), tm = $("time"), chip = $("chip"), prog = $("prog"); if (!sub) return;
+  sub.innerHTML = subOf(g);
+  if (g.mode === "time") { tm.textContent = fmt(Math.ceil(g.timeLeft)); chip.classList.toggle("warn", g.timeLeft <= 10); prog.style.width = (g.timeLeft / g.total * 100) + "%"; }
+  else if (g.limit) { tm.textContent = fmt(Math.ceil(g.timeLeft)); chip.classList.toggle("warn", g.timeLeft <= 10); prog.style.width = (foundCount(g) / g.P.words.length * 100) + "%"; }
+  else { tm.textContent = fmt(g.elapsed); prog.style.width = (foundCount(g) / g.P.words.length * 100) + "%"; }
+}
+
+/* selection */
+var start = -1, sel = [], geo = null;
+function show(list) { sel = list; cells.forEach(function (el, i) { el.classList.toggle("sel", list.indexOf(i) !== -1); }); }
+function cellAt(x, y) { var el = document.elementFromPoint(x, y); return el && el.classList && el.classList.contains("c") ? +el.dataset.i : -1; }
+function same(a, b) { return a.length === b.length && a.every(function (v, k) { return v === b[k]; }); }
+function bindGrid() {
+  gridEl.addEventListener("pointerdown", function (e) {
+    if (!G || G.paused || G.over) return;
+    var i = cellAt(e.clientX, e.clientY); if (i < 0) return;
+    start = i; show([i]); buzz(5); try { gridEl.setPointerCapture(e.pointerId); } catch (er) {}
+    var r0 = cells[i].getBoundingClientRect(), r1 = cells[Math.min(i + 1, cells.length - 1)].getBoundingClientRect();
+    var pitch = i + 1 < cells.length && (i + 1) % G.n !== 0 ? r1.left - r0.left : r0.left - cells[i - 1].getBoundingClientRect().left;
+    geo = { cx: r0.left + r0.width / 2, cy: r0.top + r0.height / 2, pitch: pitch };
+  });
+  gridEl.addEventListener("pointermove", function (e) {
+    if (start < 0) return;
+    var l;
+    if (S.snap) l = snapLine(start, (e.clientX - geo.cx) / geo.pitch, (e.clientY - geo.cy) / geo.pitch, G.n);
+    else { var i = cellAt(e.clientX, e.clientY); if (i < 0) return; l = lineCells(start, i, G.n); }
+    if (l.length !== sel.length) buzz(3);
+    show(l);
+  });
+  gridEl.addEventListener("pointerup", finishSel);
+  gridEl.addEventListener("pointercancel", finishSel);
+}
+function finishSel() {
+  if (start < 0) return;
+  var g = G, picked = sel.slice(), rev = picked.slice().reverse(), hit = -1;
+  g.P.words.forEach(function (o, wi) { if (g.found[wi] === undefined && (same(o.cells, picked) || same(o.cells, rev))) hit = wi; });
+  start = -1; show([]);
+  if (hit < 0) { if (picked.length > 1) buzz([20, 40, 20]); return; }
+  onFound(hit, picked);
+}
+function onFound(hit, picked) {
+  var g = G; markFound(g, hit, nextColor(g)); g.hints = {};
+  tone([330, 440]); buzz(30);
+  if (g.mode === "time") {
+    var now = performance.now(); g.score += 10 * g.P.words[hit].w.length; if (g.lastFind && now - g.lastFind < 6000) g.score += 5; g.lastFind = now;
+  }
+  updateAll();
+  picked.forEach(function (i) { cells[i].classList.remove("pop"); void cells[i].offsetWidth; cells[i].classList.add("pop"); });
+  if (foundCount(g) !== g.P.words.length) return;
+  if (g.mode === "time") {
+    g.score += 50; g.timeLeft += 10; g.total += 10; g.boards++; toast("+10 s · +50 pts");
+    var cur = g;
+    setTimeout(function () { if (G !== cur || cur.over) return; cur.P = makePuzzle("time", cur.n, cur.cat, randSeed()); cur.found = {}; cur.cellColor = {}; cur.hints = {}; buildGrid(); updateAll(); }, 650);
+  } else if (g.mode === "mystery") {
+    g.autoReveal = true; var cm = g; setTimeout(function () { if (G === cm && !cm.over) winGame(); }, 1500);
+  } else { var c2 = g; setTimeout(function () { if (G === c2 && !c2.over) winGame(); }, 500); }
+}
+
+/* ===== OVERLAYS ===== */
+function hideOv() { ov.hidden = true; ov.innerHTML = ""; }
+function showOv(html) { ov.innerHTML = html; ov.hidden = false; }
+function pauseGame() {
+  if (!G) return startGame("classic", {}, true);
+  G.paused = true; start = -1;
+  showOv('<h3>Em pausa</h3><p>' + titleOf(G) + ' · ' + (G.mode === "time" ? "restam " + fmt(Math.ceil(G.timeLeft)) : fmt(G.elapsed)) + '</p><button class="btn pri" data-a="resumeGame">Continuar</button><button class="btn" data-a="restart">Reiniciar</button><button class="btn" data-a="quit">Sair</button>');
+}
+function starsHtml(n) { return '<div class="stars">' + "★".repeat(n) + '<i>' + "★".repeat(3 - n) + '</i></div>'; }
+function parFor(g) { var k = { 6: 15, 8: 20, 10: 25, 12: 30 }[g.n]; return g.P.words.length * k; }
+function starsFor(g) {
+  if (g.mode === "mystery") { var s = g.autoReveal ? 2 : 3; if (g.hintsUsed) s--; return Math.max(1, s); }
+  var t = g.elapsed + 10 * g.hintsUsed, par = parFor(g); return t <= par ? 3 : t <= par * 1.5 ? 2 : 1;
+}
+function winGame() {
+  var g = G; if (!g || g.over) return; g.over = true; tone([262, 330, 392, 523]); buzz([30, 120, 30]);
+  var st = S.st;
+  if (g.mode === "time") return endTime();
+  var stars = starsFor(g), sec = Math.round(g.elapsed), wc = g.P.words.length, body, btns;
+  if (g.mode === "classic" && !g.camp) { st.wins++; st.words += wc; if (!st.best[g.n] || sec < st.best[g.n]) st.best[g.n] = sec; }
+  if (g.camp) { st.wins++; st.words += wc; if (g.mode === "mystery") st.mystery++; prog()[g.camp.L] = Math.max(prog()[g.camp.L] || 0, stars); }
+  if (g.mode === "mystery" && !g.camp) { st.wins++; st.mystery++; st.words += wc; }
+  if (g.mode === "daily") {
+    st.wins++; st.words += wc;
+    if (!dailyDone()) { st.streak = st.last === YEST ? st.streak + 1 : 1; st.last = TODAY; st.daily = { date: TODAY, seconds: sec, stars: stars }; }
+  }
+  save();
+  var mm = Math.floor(sec / 60) + "m " + sec % 60 + "s";
+  if (g.mode === "mystery") body = '<p>A palavra era</p><div class="slots" style="justify-content:center">' + g.P.mystery.word.split("").map(function (c) { return '<span class="slot">' + c + '</span>'; }).join("") + '</div><p>' + mm + '</p>';
+  else body = '<p>' + wc + ' palavras em ' + mm + '</p>';
+  var title = g.mode === "mystery" ? "Palavra descoberta" : "Nível concluído";
+  if (g.camp) {
+    var L = g.camp.L, endW = L % 30 === 0, nxt = L + 1;
+    if (endW) title = "Mundo " + (g.camp.world + 1) + " concluído";
+    body += endW ? '<p>Mundo ' + (g.camp.world + 2) + ' desbloqueado' + (nxt > MAXPLAY ? ' (indisponível no protótipo)' : '') + '</p>' : '';
+    btns = (nxt <= 300 ? '<button class="btn pri" data-a="nextLevel">' + (endW ? "Próximo mundo" : "Próximo nível") + '</button>' : '') + '<button class="btn" data-a="map">Mapa</button>';
+  } else if (g.mode === "daily") btns = '<button class="btn pri" data-a="home">Início</button>';
+  else btns = '<button class="btn pri" data-a="next">Próximo</button><button class="btn" data-a="home">Início</button>';
+  if (g.mode === "daily") body += '<p class="flame" style="justify-content:center">' + ico("flame") + streakNow() + ' dias seguidos</p>';
+  showOv('<h3>' + title + '</h3>' + starsHtml(stars) + body + btns);
+}
+function failLevel() {
+  var g = G; g.over = true; tone([392, 330, 262]); buzz([40, 60, 40]);
+  showOv('<h3>Tempo esgotado</h3><p>Faltaram ' + (g.P.words.length - foundCount(g)) + ' palavras. Tenta outra vez!</p><button class="btn pri" data-a="restart">Tentar outra vez</button><button class="btn" data-a="map">Mapa</button>');
+}
+function endTime() {
+  var g = G; g.over = true; tone([392, 330, 262]); var st = S.st, rec = g.score > st.taBest; if (rec) st.taBest = g.score;
+  st.wins++; st.words += foundCount(g) + (g.boards - 1) * g.P.words.length; save();
+  showOv('<h3>Tempo esgotado</h3><div class="big">' + g.score + '</div><p>pontos</p>' + (rec ? '<span class="tag">Novo recorde</span>' : '<p>Recorde: ' + st.taBest + '</p>') + '<p>' + (g.boards - 1) + ' tabuleiros completos · ' + CATS[g.cat].name + ' ' + g.n + '×' + g.n + '</p><button class="btn pri" data-a="again">Jogar outra vez</button><button class="btn" data-a="home">Início</button>');
+}
+function openGuess() {
+  if (!G || G.over) return; G.paused = true;
+  var L = G.P.mystery.word.length;
+  sheet.innerHTML = '<h4>Qual é a palavra?</h4><p class="msg" style="margin:0">' + G.P.mystery.clue + ' · ' + L + ' letras</p><input id="gin" maxlength="' + L + '" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Palavra misteriosa"><p class="msg" id="gmsg"></p><div class="hint"><button class="btn" data-a="gcancel">Cancelar</button><button class="btn pri" data-a="gok">Verificar</button></div>';
+  sheet.hidden = false; $("gin").focus();
+  $("gin").addEventListener("keydown", function (e) { if (e.key === "Enter") checkGuess(); });
+}
+function checkGuess() {
+  var v = stripAcc($("gin").value.trim().toUpperCase());
+  if (v === G.P.mystery.word) { sheet.hidden = true; G.solved = true; G.paused = false; updateWords(); setTimeout(winGame, 500); }
+  else { var i = $("gin"); i.classList.remove("err"); void i.offsetWidth; i.classList.add("err"); $("gmsg").textContent = v.length < G.P.mystery.word.length ? "Faltam letras." : "Ainda não é essa."; buzz([20, 40, 20]); }
+}
+
+/* ===== FLOW ===== */
+function startGame(mode, o, pausedAfter) {
+  o = o || {};
+  if (mode === "daily") G = makeGame("daily", { n: 10, cat: CATS.indexOf(dayCat()), seed: TODAY });
+  else if (mode === "time") G = makeGame("time", { n: SU.n, cat: SU.cat, dur: SU.dur });
+  else G = makeGame(mode, { n: o.n || SU.n, cat: o.cat !== undefined ? o.cat : SU.cat, diff: o.diff || SU.diff });
+  screen = "game"; hideOv(); sheet.hidden = true; render(); markJump();
+  if (pausedAfter) pauseGame();
+}
+function startLevel(L) {
+  if (L > MAXPLAY) { toast("Mundo ainda não incluído no protótipo"); return; }
+  var info = levelInfo(L);
+  G = makeGame(info.kind === "mystery" ? "mystery" : "classic", { camp: info, n: info.n, cat: info.cat, seed: info.seed + (S.lang === "en" ? 1 : 0) });
+  screen = "game"; hideOv(); sheet.hidden = true; render(); markJump();
+}
+function leave() {
+  var wasCamp = G && G.camp;
+  leaveSave(); G = null; setScreen(wasCamp ? "camp" : "home");
+}
+function simulateWin() {
+  if (!G || G.over) startGame("classic", { n: 8, cat: 0 });
+  var g = G; if (g.mode === "time") { g.score = Math.max(g.score, 860); g.boards = Math.max(g.boards, 4); updateTop(); return endTime(); }
+  g.P.words.forEach(function (o, wi) { if (g.found[wi] === undefined) markFound(g, wi, nextColor(g)); });
+  g.elapsed = g.elapsed || parFor(g) * 0.8; if (g.mode === "mystery") g.autoReveal = true; updateAll(); winGame();
+}
+
+phone.addEventListener("click", function (e) {
+  var t = e.target.closest("[data-a]"); if (!t) return; var a = t.dataset.a, v = t.dataset.v;
+  switch (a) {
+    case "home": leaveSave(); G = null; setScreen("home"); break;
+    case "camp": campWorld = Math.min(10, levelInfo(Math.min(nextLevelNum(), 300)).world + 1); G = null; setScreen("camp"); break;
+    case "map": var wc2 = G && G.camp ? G.camp.world + 1 : campWorld; leaveSave(); G = null; campWorld = wc2; setScreen("camp"); break;
+    case "world": if (worldUnlocked(+v - 1)) { campWorld = +v; render(); } else toast("Completa o mundo anterior"); break;
+    case "level": if (+v > nextLevelNum()) toast("Completa o nível anterior"); else startLevel(+v); break;
+    case "nextLevel": startLevel(G.camp.L + 1); break;
+    case "diff": SU.diff = v; S.diff = v; save(); render(); break;
+    case "lang": S.lang = v; save(); render(); break;
+    case "setup": SU.mode = v; SU.n = Math.min(SU.n, v === "mystery" ? 10 : 12); setScreen("setup"); break;
+    case "size": SU.n = +v; S.lastSize = SU.n; save(); render(); break;
+    case "cat": SU.cat = +v; S.lastCat = SU.cat; save(); render(); break;
+    case "dur": SU.dur = +v; S.lastDur = SU.dur; save(); render(); break;
+    case "start": startGame(SU.mode); break;
+    case "resume": G = saved; saved = null; screen = "game"; render(); markJump(); break;
+    case "daily": startGame("daily"); break;
+    case "settings": setScreen("settings"); break;
+    case "stats": setScreen("stats"); break;
+    case "theme": S.theme = v; save(); render(); break;
+    case "tog": S[v] = !S[v]; save(); render(); if (v === "sound" && S.sound) tone([330, 440]); break;
+    case "reset": try { localStorage.removeItem(KEY); } catch (er) {} S = defaults(); saved = makeSaved(); render(); toast("Dados repostos"); break;
+    case "hint": useHint(); break;
+    case "pause": pauseGame(); break;
+    case "resumeGame": G.paused = false; hideOv(); break;
+    case "restart": var m = G.mode, gg = G; G = null; if (gg.camp) startLevel(gg.camp.L); else if (m === "daily") startGame("daily"); else if (m === "time") startGame("time"); else startGame(m, { n: gg.n, cat: gg.cat, diff: gg.diff }); break;
+    case "quit": leave(); break;
+    case "next": startGame(G.mode, { n: G.n, cat: G.cat, diff: G.diff }); break;
+    case "again": startGame("time"); break;
+    case "guess": openGuess(); break;
+    case "gcancel": sheet.hidden = true; G.paused = false; break;
+    case "gok": checkGuess(); break;
+  }
+});
+function leaveSave() { if (G && G.camp && !G.over && foundCount(G) > 0) saved = G; }
+function useHint() {
+  var g = G; if (!g || g.paused || g.over) return;
+  if (g.mode === "time") { g.timeLeft = Math.max(1, g.timeLeft - 5); } else { if (g.hintsUsed >= 3) return; g.hintsUsed++; }
+  for (var wi = 0; wi < g.P.words.length; wi++) if (g.found[wi] === undefined) { g.hints = {}; g.hints[g.P.words[wi].cells[0]] = true; break; }
+  updateAll();
+}
+
+/* jump nav */
+var JUMP = $("jump");
+function markJump() {
+  var cur = screen === "game" && G ? (G.camp ? "level" : G.mode) : screen === "setup" ? "setup" : screen;
+  if (!ov.hidden && G && G.paused) cur = "pause";
+  JUMP.querySelectorAll("button").forEach(function (b) { b.setAttribute("aria-current", b.dataset.j === cur ? "true" : "false"); });
+}
+new MutationObserver(markJump).observe(ov, { attributes: true, childList: true });
+JUMP.addEventListener("click", function (e) {
+  var b = e.target.closest("button"); if (!b) return; var j = b.dataset.j;
+  if (j === "home" || j === "settings" || j === "stats") { leaveSave(); G = null; return setScreen(j); }
+  if (j === "camp") { leaveSave(); G = null; campWorld = levelInfo(Math.min(nextLevelNum(), 300)).world + 1; return setScreen("camp"); }
+  if (j === "level") return startLevel(nextLevelNum());
+  if (j === "timed") return startLevel(40);
+  if (j === "boss") return startLevel(30);
+  if (j === "setup") { SU.mode = "classic"; G = null; return setScreen("setup"); }
+  if (j === "pause") return pauseGame();
+  if (j === "win") return simulateWin();
+  if (j === "daily") { return startGame("daily"); }
+  if (j === "time") { SU.n = Math.min(SU.n, 12); return startGame("time"); }
+  if (j === "mystery") { if (SU.n > 10) SU.n = 8; return startGame("mystery"); }
+  startGame(j);
+});
+
+/* ticking */
+var lastT = performance.now();
+setInterval(function () {
+  var now = performance.now(), dt = (now - lastT) / 1000; lastT = now;
+  var d = new Date(); $("clock").textContent = (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes();
+  if (screen !== "game" || !G || G.paused || G.over) return;
+  if (G.mode === "time") { G.timeLeft -= dt; if (G.timeLeft <= 0) { G.timeLeft = 0; updateTop(); endTime(); return; } } else { G.elapsed += dt; if (G.limit) { G.timeLeft = G.limit - G.elapsed; if (G.timeLeft <= 0) { G.timeLeft = 0; updateTop(); failLevel(); return; } } }
+  updateTop();
+}, 200);
+
+function makeSaved() {
+  var info = levelInfo(47), g = makeGame("classic", { camp: info, n: info.n, cat: info.cat, seed: info.seed }); g.elapsed = 98;
+  [0, 1, 2].forEach(function (i) { if (g.P.words[i]) markFound(g, i, i); });
+  return g;
+}
+saved = makeSaved();
+render(); markJump();
+})();
+
+</script>
