@@ -1,0 +1,16 @@
+A word search game for Android with no ads, no trackers and no internet access. The only permission is vibration.
+
+<b>Game modes</b>
+• Campaign with 300 levels across 10 worlds, progressive unlocking, up to 3 stars per level, timed levels and bosses
+• Free play on 6×6, 8×8, 10×10 and 12×12 boards, with three difficulty levels and 10 categories
+• Daily challenge: the same puzzle for everyone, generated from the date
+• Time attack: find as many words as you can before time runs out
+• Mystery word: a clue, words to find and a secret word to guess
+
+<b>Details</b>
+• Words in European Portuguese and English
+• Hints, statistics, best times and records
+• Colorblind mode, adjustable letter size and direction-assisted dragging
+• Two dark themes, code-generated sounds and layouts adapted to phones and tablets
+
+The game interface is in Portuguese (pt-PT). Open source under the MIT license.

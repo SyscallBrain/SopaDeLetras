@@ -1,0 +1,2 @@
+Primeira versão disponível no F-Droid.
+Assinatura da versão com chave própria e remoção do bloco de informação de dependências.

@@ -1,0 +1,16 @@
+Sopa de letras para Android, sem anúncios, sem rastreadores e sem internet. A única permissão é a vibração.
+
+<b>Modos de jogo</b>
+• Campanha com 300 níveis em 10 mundos, desbloqueio progressivo, até 3 estrelas por nível, níveis cronometrados e chefes
+• Jogo livre em tabuleiros 6×6, 8×8, 10×10 e 12×12, com três dificuldades e 10 categorias
+• Desafio diário: o mesmo puzzle para toda a gente, gerado a partir da data
+• Contra-relógio: encontra o máximo de palavras antes do tempo acabar
+• Palavra misteriosa: uma pista, palavras por descobrir e uma palavra secreta para adivinhar
+
+<b>Detalhes</b>
+• Palavras em português europeu e em inglês
+• Pistas, estatísticas, melhores tempos e recordes
+• Modo para daltónicos, tamanho de letra ajustável e ajuda de direção no arrasto
+• Dois temas escuros, sons gerados por código e layouts adaptados a telemóveis e tablets
+
+Código aberto sob a licença MIT.
