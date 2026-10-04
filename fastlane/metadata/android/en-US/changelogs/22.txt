@@ -1,0 +1,2 @@
+Fixed the Portuguese short description length for F-Droid.
+Metadata and packaging tweaks; no gameplay changes.

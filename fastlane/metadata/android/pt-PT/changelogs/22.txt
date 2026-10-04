@@ -1,0 +1,2 @@
+Corrigido o tamanho da descrição curta em português para o F-Droid.
+Ajustes de metadados e empacotamento; sem alterações ao jogo.
