@@ -15,8 +15,8 @@ android {
         applicationId = "app.sopadeletras"
         minSdk = 26
         targetSdk = 36
-        versionCode = 22
-        versionName = "1.0.3"
+        versionCode = 23
+        versionName = "1.0.4"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -64,6 +64,13 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    // Keep native libraries unstripped so the APK is identical whether or not the
+    // build machine has the NDK (needed for F-Droid reproducible builds).
+    packaging {
+        jniLibs {
+            keepDebugSymbols += "**/*.so"
+        }
     }
 }
 

@@ -1,0 +1,2 @@
+Reproducible builds: native libraries are no longer stripped, so the APK is identical across build machines.
+No gameplay changes.
