@@ -1,0 +1,2 @@
+Builds reprodutíveis: as bibliotecas nativas deixam de ser limpas, para o APK sair igual em qualquer máquina.
+Sem alterações ao jogo.
